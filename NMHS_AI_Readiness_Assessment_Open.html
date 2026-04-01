@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NMHS AI Readiness Assessment — Diagnostic Tool</title>
+<meta name="description" content="An open-source diagnostic tool for assessing NMHS readiness to adopt and deploy AI across six critical pillars. Free to use and adapt.">
+<meta name="author" content="Piloted with expertise from ECMWF, University of Oxford, MeteoSwiss">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:   #0A2239;
+  --blue:   #065A82;
+  --teal:   #1C7293;
+  --mint:   #02C39A;
+  --sky:    #9CD3E8;
+  --gold:   #F59E0B;
+  --orange: #F97316;
+  --purple: #7C3AED;
+  --green:  #059669;
+  --red:    #DC2626;
+  --white:  #FFFFFF;
+  --off:    #F8FAFC;
+  --light:  #EEF2FF;
+  --border: #E2E8F0;
+  --gray:   #64748B;
+  --dark:   #1E293B;
+  --text:   #334155;
+  --ai:     #7C3AED;
+  --ai-dark:#5B21B6;
+  --ai-lite:#EDE9FE;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--off);color:var(--text);display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+#sidebar{width:268px;min-width:268px;background:var(--navy);color:var(--white);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;z-index:100}
+.sb-brand{padding:20px 18px 14px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sb-bow{display:inline-flex;align-items:center;gap:8px;margin-bottom:4px}
+.sb-badge{background:var(--mint);color:var(--navy);font-weight:800;font-size:11px;padding:2px 8px;border-radius:4px;letter-spacing:.5px}
+.sb-title{font-size:13px;font-weight:700;color:var(--white)}
+.sb-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px}
+.sb-progress{padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sb-prog-label{font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:5px;display:flex;justify-content:space-between}
+.sb-prog-bar{height:4px;background:rgba(255,255,255,0.15);border-radius:2px;overflow:hidden}
+.sb-prog-fill{height:100%;background:var(--ai);border-radius:2px;transition:width .4s}
+.sb-score-display{padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:10px}
+.ssd-num{font-size:26px;font-weight:800;color:var(--white);line-height:1}
+.ssd-denom{font-size:13px;color:rgba(255,255,255,0.4)}
+.ssd-label{font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px}
+.tier-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;margin-top:4px}
+.sb-nav{padding:8px 0;flex:1}
+.sb-section{padding:8px 18px 4px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;transition:background .15s;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,0.06)}
+.nav-item.active{background:rgba(124,58,237,0.2);border-left-color:var(--ai)}
+.nav-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.18);flex-shrink:0;transition:background .3s}
+.nav-label{font-size:12px;color:rgba(255,255,255,0.75);flex:1}
+.nav-item.active .nav-label{color:var(--white);font-weight:600}
+.nav-score{font-size:11px;font-weight:700;min-width:30px;text-align:right;color:rgba(255,255,255,0.35)}
+.nav-weight{font-size:10px;color:rgba(255,255,255,0.3);margin-left:2px}
+
+/* ── MAIN ── */
+#main{margin-left:268px;flex:1;min-height:100vh}
+.page{display:none}
+.page.active{display:block}
+
+/* ── PAGE HEADER ── */
+.page-header{background:linear-gradient(135deg,var(--ai-dark) 0%,var(--ai) 60%,#A855F7 100%);color:var(--white);padding:36px 40px 32px}
+.ph-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;margin-bottom:14px}
+.page-header h1{font-size:28px;font-weight:800;margin-bottom:8px;line-height:1.2}
+.page-header p{font-size:15px;opacity:.85;max-width:640px;line-height:1.6}
+.ph-meta{display:flex;gap:20px;margin-top:16px;flex-wrap:wrap}
+.ph-stat{background:rgba(255,255,255,0.12);border-radius:8px;padding:10px 16px;text-align:center}
+.ph-stat-num{font-size:22px;font-weight:800;line-height:1}
+.ph-stat-lbl{font-size:11px;opacity:.75;margin-top:2px}
+
+/* ── CONTENT ── */
+.page-body{padding:32px 40px 64px;max-width:920px}
+
+/* ── CALLOUT ── */
+.callout{padding:16px 20px;border-radius:10px;margin-bottom:20px;font-size:13px;line-height:1.65}
+.callout-ai{background:var(--ai-lite);border-left:4px solid var(--ai)}
+.callout-gold{background:rgba(245,158,11,0.07);border-left:4px solid var(--gold)}
+.callout-mint{background:rgba(2,195,154,0.06);border-left:4px solid var(--mint)}
+.callout-blue{background:rgba(6,90,130,0.06);border-left:4px solid var(--blue)}
+.callout strong{color:var(--navy)}
+
+/* ── SECTION HEADER ── */
+.sect-hdr{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px}
+.sect-sub{font-size:13px;color:var(--gray);margin-bottom:20px;line-height:1.5}
+
+/* ── CARDS ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+
+/* ── PILLAR INTRO ── */
+.pillar-intro{display:flex;align-items:flex-start;gap:16px;padding:18px 20px;background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:20px}
+.pillar-num{width:52px;height:52px;border-radius:12px;background:var(--ai);color:var(--white);font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pillar-meta{flex:1}
+.pillar-name{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:3px}
+.pillar-tagline{font-size:13px;color:var(--gray);line-height:1.5;margin-bottom:8px}
+.pillar-weight-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:var(--ai-lite);border-radius:20px;font-size:12px;font-weight:700;color:var(--ai)}
+.pillar-score-row{display:flex;align-items:center;gap:12px;margin-top:10px}
+.pillar-score-val{font-size:22px;font-weight:800;color:var(--ai)}
+.pillar-score-bar-wrap{flex:1;height:8px;background:rgba(124,58,237,0.1);border-radius:4px;overflow:hidden}
+.pillar-score-bar{height:100%;background:var(--ai);border-radius:4px;transition:width .4s}
+
+/* ── ASSESSMENT ITEMS ── */
+.item-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:12px;transition:border-color .2s}
+.item-card.scored{border-color:rgba(124,58,237,0.3)}
+.item-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.item-num{width:28px;height:28px;border-radius:6px;background:var(--ai-lite);color:var(--ai);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.item-text{font-size:13px;font-weight:500;color:var(--dark);line-height:1.6;flex:1}
+.score-btns{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.score-btn{flex:1;min-width:60px;padding:9px 6px;border:2px solid var(--border);border-radius:8px;background:var(--white);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;text-align:center;color:var(--gray);line-height:1.3}
+.score-btn:hover{border-color:var(--ai);color:var(--ai)}
+.score-btn.active-0{border-color:#DC2626;background:#DC2626;color:var(--white)}
+.score-btn.active-1{border-color:#F97316;background:#F97316;color:var(--white)}
+.score-btn.active-2{border-color:#F59E0B;background:#F59E0B;color:var(--white)}
+.score-btn.active-3{border-color:#059669;background:#059669;color:var(--white)}
+.obs-field{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:12px;font-family:'Inter',sans-serif;color:var(--text);resize:vertical;min-height:56px;outline:none;transition:border .15s;background:var(--off)}
+.obs-field:focus{border-color:var(--ai);background:var(--white)}
+.obs-label{font-size:11px;font-weight:600;color:var(--gray);margin-bottom:4px}
+
+/* ── SCORE LEGEND ── */
+.score-legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.sl-pill{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700}
+
+/* ── GUIDANCE TOGGLE ── */
+.guidance-toggle{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--off);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ai);margin-bottom:14px;transition:background .15s}
+.guidance-toggle:hover{background:var(--ai-lite)}
+.guidance-body{display:none;padding:14px 16px;background:var(--ai-lite);border-radius:8px;margin-bottom:14px;font-size:13px;line-height:1.65;color:var(--text)}
+.guidance-body.open{display:block}
+
+/* ── SUMMARY ── */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.summary-pillar-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px}
+.spc-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.spc-num{width:32px;height:32px;border-radius:8px;background:var(--ai);color:var(--white);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.spc-name{font-size:13px;font-weight:700;color:var(--navy);flex:1}
+.spc-weight{font-size:11px;color:var(--gray)}
+.spc-score-row{display:flex;align-items:center;gap:10px}
+.spc-score{font-size:22px;font-weight:800;color:var(--ai)}
+.spc-denom{font-size:14px;color:var(--gray)}
+.spc-bar-wrap{flex:1;height:8px;background:rgba(124,58,237,0.1);border-radius:4px;overflow:hidden}
+.spc-bar{height:100%;background:var(--ai);border-radius:4px;transition:width .6s}
+.spc-weighted{font-size:11px;color:var(--gray);margin-top:6px}
+
+/* ── OVERALL SCORE CARD ── */
+.overall-card{background:linear-gradient(135deg,var(--ai-dark),var(--ai));color:var(--white);border-radius:16px;padding:28px;text-align:center;margin-bottom:24px}
+.oc-score{font-size:64px;font-weight:800;line-height:1}
+.oc-denom{font-size:24px;opacity:.6}
+.oc-tier{font-size:16px;font-weight:700;margin-top:8px}
+.oc-label{font-size:13px;opacity:.8;margin-top:4px;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.5}
+.tier-strip{display:flex;gap:8px;margin-bottom:24px}
+.ts-item{flex:1;padding:14px;border-radius:10px;text-align:center;border:2px solid var(--border);transition:border-color .3s,background .3s}
+.ts-item.active{border-color:var(--ai)}
+.ts-range{font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px}
+.ts-name{font-size:14px;font-weight:800;color:var(--navy)}
+.ts-desc{font-size:11px;color:var(--gray);margin-top:4px;line-height:1.4}
+
+/* ── RADAR ── */
+.radar-wrap{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;margin-bottom:24px}
+.radar-canvas-wrap{flex:0 0 260px}
+.radar-legend{flex:1;min-width:200px}
+.rl-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.rl-item:last-child{border-bottom:none}
+.rl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.rl-name{font-size:12px;font-weight:600;color:var(--dark);flex:1}
+.rl-bar-wrap{width:90px;height:7px;background:rgba(124,58,237,0.1);border-radius:3px;overflow:hidden}
+.rl-bar{height:100%;background:var(--ai);border-radius:3px;transition:width .5s}
+.rl-val{font-size:12px;font-weight:700;color:var(--ai);min-width:36px;text-align:right}
+.rl-pct{font-size:11px;color:var(--gray);min-width:30px;text-align:right}
+
+/* ── ROUTING GUIDE ── */
+.route-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px;border-left:4px solid var(--border)}
+.route-card.tier1{border-left-color:#DC2626}
+.route-card.tier2{border-left-color:#F59E0B}
+.route-card.tier3{border-left-color:#059669}
+.route-card.highlighted{background:var(--ai-lite);border-color:var(--ai);border-left-color:var(--ai)}
+.rc-tier{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.rc-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.rc-body{font-size:13px;line-height:1.6;color:var(--text)}
+
+/* ── PILOTS TABLE ── */
+.pilot-card{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.pc-header{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border)}
+.pc-rank{width:32px;height:32px;border-radius:8px;background:var(--ai);color:var(--white);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pc-title{flex:1}
+.pc-name{font-size:14px;font-weight:700;color:var(--navy)}
+.pc-use{font-size:12px;color:var(--gray);margin-top:2px}
+.pc-priority{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700}
+.pri-high{background:rgba(5,150,105,0.1);color:#059669}
+.pri-medium{background:rgba(245,158,11,0.1);color:#D97706}
+.pri-lower{background:rgba(100,116,139,0.1);color:var(--gray)}
+.pc-body{padding:14px 18px}
+.pc-rationale{font-size:13px;line-height:1.6;color:var(--text);margin-bottom:8px}
+.pc-prereq{font-size:12px;color:var(--gray);padding:8px 12px;background:var(--off);border-radius:6px}
+.pc-prereq strong{color:var(--navy)}
+
+/* ── RESOURCE CARDS ── */
+.resource-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
+.resource-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;text-decoration:none;color:inherit;display:block;transition:box-shadow .2s;position:relative;overflow:hidden}
+.resource-card:hover{box-shadow:0 4px 18px rgba(0,0,0,0.09);text-decoration:none}
+.resource-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ai)}
+.resource-card.rc-blue::before{background:var(--blue)}
+.resource-card.rc-teal::before{background:var(--teal)}
+.resource-card.rc-mint::before{background:var(--mint)}
+.resource-card.rc-gold::before{background:var(--gold)}
+.resource-card.rc-orange::before{background:var(--orange)}
+.rc-org{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray);margin-bottom:5px}
+.rc-title-r{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:3px}
+.rc-desc-r{font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:8px}
+.rc-url{font-size:11px;font-weight:600;color:var(--ai);display:inline-flex;align-items:center;gap:3px;word-break:break-all}
+.rc-url::after{content:'↗';flex-shrink:0}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-ai{background:var(--ai);color:var(--white)}
+.btn-ai:hover{background:var(--ai-dark)}
+.btn-outline{background:var(--white);color:var(--ai);border:2px solid var(--ai)}
+.btn-outline:hover{background:var(--ai-lite)}
+.btn-group{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+
+/* ── INTRO PILLARS OVERVIEW ── */
+.pillar-overview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.pog-item{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.pog-num{width:34px;height:34px;border-radius:8px;background:var(--ai);color:var(--white);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+.pog-name{font-size:13px;font-weight:700;color:var(--navy)}
+.pog-weight{font-size:11px;font-weight:700;color:var(--ai)}
+.pog-items{font-size:11px;color:var(--gray)}
+
+/* ── PROCESS BOX ── */
+.process-box{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.pb-step{flex:1;padding:16px 14px;text-align:center;border-right:1px solid var(--border);position:relative}
+.pb-step:last-child{border-right:none}
+.pb-icon{font-size:22px;margin-bottom:6px}
+.pb-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:3px}
+.pb-desc{font-size:11px;color:var(--gray);line-height:1.4}
+.pb-num{position:absolute;top:10px;right:10px;font-size:10px;font-weight:800;color:rgba(124,58,237,0.3)}
+
+/* ── PRINT ── */
+@media print {
+  #sidebar,.btn-group,.guidance-toggle{display:none!important}
+  #main{margin-left:0}
+  .page{display:block!important}
+  .item-card{break-inside:avoid}
+}
+@media (max-width:900px){
+  #sidebar{transform:translateX(-100%)}
+  #main{margin-left:0}
+  .pillar-overview-grid{grid-template-columns:1fr 1fr}
+  .summary-grid{grid-template-columns:1fr}
+  .resource-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ SIDEBAR ═══════════════════════════ -->
+<nav id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-bow">
+      <span class="sb-badge" style="background:var(--purple);color:#fff">NMHS</span>
+      <span class="sb-title">AI Readiness</span>
+    </div>
+    <div class="sb-sub">Diagnostic Tool — Open Source</div>
+  </div>
+  <div class="sb-score-display">
+    <div>
+      <div style="display:flex;align-items:baseline;gap:3px">
+        <span class="ssd-num" id="sb-total">0</span>
+        <span class="ssd-denom">/100</span>
+      </div>
+      <div class="ssd-label">Weighted score</div>
+      <div class="tier-badge" id="sb-tier" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5)">Not yet scored</div>
+    </div>
+  </div>
+  <div class="sb-progress">
+    <div class="sb-prog-label">
+      <span>Items completed</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="sb-prog-bar"><div class="sb-prog-fill" id="prog-fill"></div></div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-section">Overview</div>
+    <div class="nav-item active" onclick="showPage('intro')">
+      <div class="nav-dot" id="dot-intro" style="background:var(--ai)"></div>
+      <span class="nav-label">Introduction</span>
+    </div>
+
+    <div class="sb-section">Part A — Six Pillars</div>
+    <div class="nav-item" onclick="showPage('p1')">
+      <div class="nav-dot" id="dot-p1"></div>
+      <span class="nav-label">1. Data Infrastructure</span>
+      <span class="nav-score" id="ns-p1">–</span>
+      <span class="nav-weight">/36</span>
+    </div>
+    <div class="nav-item" onclick="showPage('p2')">
+      <div class="nav-dot" id="dot-p2"></div>
+      <span class="nav-label">2. Technical Infrastructure</span>
+      <span class="nav-score" id="ns-p2">–</span>
+      <span class="nav-weight">/30</span>
+    </div>
+    <div class="nav-item" onclick="showPage('p3')">
+      <div class="nav-dot" id="dot-p3"></div>
+      <span class="nav-label">3. Human Capacity</span>
+      <span class="nav-score" id="ns-p3">–</span>
+      <span class="nav-weight">/30</span>
+    </div>
+    <div class="nav-item" onclick="showPage('p4')">
+      <div class="nav-dot" id="dot-p4"></div>
+      <span class="nav-label">4. Operational Workflows</span>
+      <span class="nav-score" id="ns-p4">–</span>
+      <span class="nav-weight">/30</span>
+    </div>
+    <div class="nav-item" onclick="showPage('p5')">
+      <div class="nav-dot" id="dot-p5"></div>
+      <span class="nav-label">5. Governance &amp; Ethics</span>
+      <span class="nav-score" id="ns-p5">–</span>
+      <span class="nav-weight">/30</span>
+    </div>
+    <div class="nav-item" onclick="showPage('p6')">
+      <div class="nav-dot" id="dot-p6"></div>
+      <span class="nav-label">6. Partnerships</span>
+      <span class="nav-score" id="ns-p6">–</span>
+      <span class="nav-weight">/30</span>
+    </div>
+
+    <div class="sb-section">Results</div>
+    <div class="nav-item" onclick="showPage('summary')">
+      <div class="nav-dot" id="dot-summary"></div>
+      <span class="nav-label">Summary &amp; Maturity Tier</span>
+    </div>
+    <div class="nav-item" onclick="showPage('pilots')">
+      <div class="nav-dot" id="dot-pilots"></div>
+      <span class="nav-label">AI Pilots — Prioritised</span>
+    </div>
+    <div class="nav-item" onclick="showPage('resources')">
+      <div class="nav-dot" id="dot-resources"></div>
+      <span class="nav-label">Key Resources &amp; Links</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════ MAIN ═══════════════════════════════ -->
+<main id="main">
+
+<!-- ── PAGE: INTRO ── -->
+<div class="page active" id="page-intro">
+  <div class="page-header">
+    <div class="ph-eyebrow">🤖 NMHS AI Readiness Assessment</div>
+    <h1>AI Readiness — Diagnostic Tool</h1>
+    <p>A structured, open-source assessment of your NMHS's readiness to adopt and deploy AI across six critical pillars. Free to use, adapt, and share.</p>
+    <div class="ph-meta">
+      <div class="ph-stat"><div class="ph-stat-num">6</div><div class="ph-stat-lbl">Pillars</div></div>
+      <div class="ph-stat"><div class="ph-stat-num">62</div><div class="ph-stat-lbl">Assessment items</div></div>
+      <div class="ph-stat"><div class="ph-stat-num">0–3</div><div class="ph-stat-lbl">Score per item</div></div>
+      <div class="ph-stat"><div class="ph-stat-num">2–3h</div><div class="ph-stat-lbl">Recommended time</div></div>
+    </div>
+  </div>
+  <div class="page-body">
+
+    <div class="callout callout-gold">
+      <strong>How to use this tool:</strong> Complete this assessment as a structured workshop or interview with NMHS technical and management staff (allow 2–3 hours). Score each item 0–3, add observations or evidence in the notes field, and the tool will calculate your weighted score and maturity tier automatically. Use the results to identify priority development areas and guide your AI roadmap.
+    </div>
+
+    <div class="sect-hdr">Scoring Scale</div>
+    <div class="sect-sub">Each of the 60 items is rated on a four-point scale.</div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:10px">
+        <div style="width:36px;height:36px;border-radius:8px;background:#DC2626;color:var(--white);font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">0</div>
+        <div><div style="font-size:14px;font-weight:700;color:var(--navy)">Absent</div><div style="font-size:12px;color:var(--gray)">Not in place. No awareness or activity in this area.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:10px">
+        <div style="width:36px;height:36px;border-radius:8px;background:#F97316;color:var(--white);font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+        <div><div style="font-size:14px;font-weight:700;color:var(--navy)">Initial</div><div style="font-size:12px;color:var(--gray)">Awareness exists but activity is ad hoc or incomplete.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:10px">
+        <div style="width:36px;height:36px;border-radius:8px;background:#F59E0B;color:var(--white);font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+        <div><div style="font-size:14px;font-weight:700;color:var(--navy)">Developing</div><div style="font-size:12px;color:var(--gray)">Elements in place but not fully operational or systematised.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:10px">
+        <div style="width:36px;height:36px;border-radius:8px;background:#059669;color:var(--white);font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+        <div><div style="font-size:14px;font-weight:700;color:var(--navy)">Established</div><div style="font-size:12px;color:var(--gray)">Fully operational and consistently applied.</div></div>
+      </div>
+    </div>
+
+    <div class="sect-hdr">Six Pillars &amp; Weights</div>
+    <div class="sect-sub">Pillars are weighted by their importance as AI readiness bottlenecks.</div>
+
+    <div class="pillar-overview-grid">
+      <div class="pog-item"><div class="pog-num">1</div><div class="pog-name">Data Infrastructure &amp; Governance</div><div class="pog-weight">25% weight</div><div class="pog-items">12 items — most critical bottleneck</div></div>
+      <div class="pog-item"><div class="pog-num">2</div><div class="pog-name">Technical &amp; Computing Infrastructure</div><div class="pog-weight">15% weight</div><div class="pog-items">10 items — addressable with modest investment</div></div>
+      <div class="pog-item"><div class="pog-num">3</div><div class="pog-name">Human Capacity &amp; Skills</div><div class="pog-weight">25% weight</div><div class="pog-items">10 items — hardest bottleneck to address</div></div>
+      <div class="pog-item"><div class="pog-num">4</div><div class="pog-name">Operational Workflow Integration</div><div class="pog-weight">15% weight</div><div class="pog-items">10 items — absorptive capacity for AI outputs</div></div>
+      <div class="pog-item"><div class="pog-num">5</div><div class="pog-name">Governance, Ethics &amp; Institutional</div><div class="pog-weight">10% weight</div><div class="pog-items">10 items — leadership and accountability</div></div>
+      <div class="pog-item"><div class="pog-num">6</div><div class="pog-name">Partnerships &amp; External Linkages</div><div class="pog-weight">10% weight</div><div class="pog-items">10 items — access to external expertise</div></div>
+    </div>
+
+    <div class="callout callout-mint">
+      <strong>Weighted scoring:</strong> Weighted Score = (Pillar Score ÷ Pillar Maximum) × Pillar Weight. Scores are summed for an overall result out of 100. Pillar 1 has a maximum of 36 (12 items × 3); all others are 30 (10 items × 3). This drives the maturity tier: Tier 1 Foundational (0–33), Tier 2 Developing (34–66), Tier 3 Advanced (67–100).
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-ai" onclick="showPage('p1')">Begin Assessment — Pillar 1 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PILLAR PAGES GENERATED BY JS -->
+<div class="page" id="page-p1"></div>
+<div class="page" id="page-p2"></div>
+<div class="page" id="page-p3"></div>
+<div class="page" id="page-p4"></div>
+<div class="page" id="page-p5"></div>
+<div class="page" id="page-p6"></div>
+
+<!-- ── PAGE: SUMMARY ── -->
+<div class="page" id="page-summary">
+  <div class="page-header">
+    <div class="ph-eyebrow">📊 Results</div>
+    <h1>Summary &amp; Maturity Tier</h1>
+    <p>Your weighted score across all six pillars and the maturity tier classification to guide your AI development roadmap.</p>
+  </div>
+  <div class="page-body">
+    <div id="summaryContent">
+      <div style="text-align:center;padding:40px;color:var(--gray)">
+        <div style="font-size:40px;margin-bottom:12px">📊</div>
+        <div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:6px">No scores recorded yet</div>
+        <div style="font-size:13px">Complete the pillar assessments to see your summary.</div>
+        <button class="btn btn-ai" onclick="showPage('p1')" style="margin-top:16px">Start Assessment →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAGE: PILOTS ── -->
+<div class="page" id="page-pilots">
+  <div class="page-header">
+    <div class="ph-eyebrow">🚀 AI Pilots</div>
+    <h1>Suggested AI Pilots — Prioritised</h1>
+    <p>Starting points recommended by operational impact, technical feasibility, and alignment with available partner tools. Check prerequisites against your pillar scores.</p>
+  </div>
+  <div class="page-body">
+
+    <div class="callout callout-ai">
+      <strong>Prerequisites:</strong> Each pilot lists checklist item scores that should be in place before starting. Cross-reference with your pillar scores — items that scored 0 or 1 in the relevant prerequisites are your most important preparation steps.
+    </div>
+
+    <div class="pilot-card">
+      <div class="pc-header">
+        <div class="pc-rank">1</div>
+        <div class="pc-title">
+          <div class="pc-name">ML-based bias correction of NWP output</div>
+          <div class="pc-use">Temperature &amp; precipitation post-processing using ECMWF AIFS</div>
+        </div>
+        <div class="pc-priority pri-high">HIGH</div>
+      </div>
+      <div class="pc-body">
+        <div class="pc-rationale">Lowest data and compute requirements of all pilots; highest operational value per unit of effort; well-documented methods; immediately deployable with Phase 1 actions. Expected 10–20% skill improvement in 24–72h forecasts.</div>
+        <div class="pc-prereq"><strong>Prerequisites:</strong> 1.1 ≥2 (historical data), 2.3 ≥1 (Python workstations), 3.1 ≥2 (Python-proficient staff) &nbsp;·&nbsp; <strong>Partners:</strong> ECMWF, regional partner NMHS</div>
+      </div>
+    </div>
+
+    <div class="pilot-card">
+      <div class="pc-header">
+        <div class="pc-rank">2</div>
+        <div class="pc-title">
+          <div class="pc-name">Radar-based precipitation nowcasting</div>
+          <div class="pc-use">Deep learning or optical flow methods — MeteoSwiss RainForest applicable</div>
+        </div>
+        <div class="pc-priority pri-high">HIGH</div>
+      </div>
+      <div class="pc-body">
+        <div class="pc-rationale">Nowcasting is the highest-impact service for flash flood warning. MeteoSwiss RainForest is directly applicable. Even without dense radar, gauge-based QPE components are usable.</div>
+        <div class="pc-prereq"><strong>Prerequisites:</strong> 1.3 ≥2 (near real-time AWS), 2.7 ≥2 (radar data), 3.2 ≥1 (ML training) &nbsp;·&nbsp; <strong>Partners:</strong> MeteoSwiss, EUMETNET OPERA</div>
+      </div>
+    </div>
+
+    <div class="pilot-card">
+      <div class="pc-header">
+        <div class="pc-rank">3</div>
+        <div class="pc-title">
+          <div class="pc-name">AI-enhanced hydrological flood forecasting</div>
+          <div class="pc-use">ML river level prediction for key national catchments</div>
+        </div>
+        <div class="pc-priority pri-high">HIGH</div>
+      </div>
+      <div class="pc-body">
+        <div class="pc-rationale">Directly addresses the highest-risk hydrological hazard. Shared catchments with neighbouring countries create bilateral co-operation opportunities. Oxford hydrology group actively seeks this type of collaboration.</div>
+        <div class="pc-prereq"><strong>Prerequisites:</strong> 1.2 ≥2 (hydrological data), 4.6 ≥1 (hydro forecasting), 3.2 ≥1 (ML training) &nbsp;·&nbsp; <strong>Partners:</strong> University of Oxford, World Bank, SMHI, regional partner NMHS</div>
+      </div>
+    </div>
+
+    <div class="pilot-card">
+      <div class="pc-header">
+        <div class="pc-rank">4</div>
+        <div class="pc-title">
+          <div class="pc-name">Agrometeorological advisory using AI</div>
+          <div class="pc-use">Drought index prediction, soil moisture forecasting</div>
+        </div>
+        <div class="pc-priority pri-medium">MEDIUM</div>
+      </div>
+      <div class="pc-body">
+        <div class="pc-rationale">High demand from agriculture sector. Partially available data. Aligns with national digital transformation priorities and relevant policy frameworks. Oxford ECI actively engages on applied climate services of this type.</div>
+        <div class="pc-prereq"><strong>Prerequisites:</strong> 1.1 ≥2 (historical data), 4.3 ≥1 (probabilistic methods), 5.4 ≥1 (policy alignment) &nbsp;·&nbsp; <strong>Partners:</strong> FAO, UNDP, Ministry of Agriculture, Oxford ECI</div>
+      </div>
+    </div>
+
+    <div class="pilot-card">
+      <div class="pc-header">
+        <div class="pc-rank">5</div>
+        <div class="pc-title">
+          <div class="pc-name">Automated weather product generation</div>
+          <div class="pc-use">NLP-based text forecast drafting from NWP data</div>
+        </div>
+        <div class="pc-priority pri-lower">LOWER</div>
+      </div>
+      <div class="pc-body">
+        <div class="pc-rationale">Reduces forecaster workload but requires a mature NWP pipeline and QA frameworks. Best pursued after Pilots 1–3 are established. Requires strong operational workflow foundations.</div>
+        <div class="pc-prereq"><strong>Prerequisites:</strong> 4.1 ≥2 (structured workflow), 4.7 ≥2 (verification system), 5.3 ≥1 (AI guidelines) &nbsp;·&nbsp; <strong>Partners:</strong> WMO, private sector NLP providers</div>
+      </div>
+    </div>
+
+    <div class="callout callout-blue" style="margin-top:8px">
+      <strong>Two critical first actions regardless of tier:</strong><br>
+      1. Register for ECMWF Open Data and begin accessing AIFS forecast output for your domain — this costs nothing and can start this week at <a href="https://www.ecmwf.int/en/forecasts/dataset/aifs-machine-learning-data" target="_blank" style="color:var(--blue);font-weight:600">ecmwf.int</a><br>
+      2. Contact the EUMETNET Secretariat to request E-AI observer participation — <a href="mailto:info@eumetnet.eu" style="color:var(--blue);font-weight:600">info@eumetnet.eu</a>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-ai" onclick="showPage('resources')">Key Resources &amp; Links →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAGE: RESOURCES ── -->
+<div class="page" id="page-resources">
+  <div class="page-header">
+    <div class="ph-eyebrow">📚 Resources</div>
+    <h1>Key Resources &amp; Links</h1>
+    <p>Official access points, training programmes and contacts for ECMWF, MeteoSwiss, University of Oxford, EUMETNET, EUMETSAT and WMO.</p>
+  </div>
+  <div class="page-body">
+
+    <div class="sect-hdr">ECMWF</div>
+    <div class="resource-grid">
+      <a class="resource-card rc-blue" href="https://www.ecmwf.int/en/forecasts/dataset/aifs-machine-learning-data" target="_blank">
+        <div class="rc-org">ECMWF</div>
+        <div class="rc-title-r">AIFS Open Data Portal</div>
+        <div class="rc-desc-r">Free, real-time AIFS forecast data under CC-4.0-BY. Both AIFS Single and AIFS ENS available. Start here this week.</div>
+        <div class="rc-url">ecmwf.int/aifs-data</div>
+      </a>
+      <a class="resource-card rc-blue" href="https://learning.ecmwf.int" target="_blank">
+        <div class="rc-org">ECMWF</div>
+        <div class="rc-title-r">eLearning Portal</div>
+        <div class="rc-desc-r">Free self-paced courses including DestinE ML for Earth Systems (3-part series) and the 6-part Discover Anemoi webinar series.</div>
+        <div class="rc-url">learning.ecmwf.int</div>
+      </a>
+      <a class="resource-card rc-blue" href="https://events.ecmwf.int" target="_blank">
+        <div class="rc-org">ECMWF</div>
+        <div class="rc-title-r">ML Weather Prediction Course</div>
+        <div class="rc-desc-r">Annual 5-day course (typically October). Open to non-member states. Apply via events.ecmwf.int — deadline ~July each year.</div>
+        <div class="rc-url">events.ecmwf.int</div>
+      </a>
+      <a class="resource-card rc-blue" href="https://github.com/ecmwf/anemoi-core" target="_blank">
+        <div class="rc-org">ECMWF</div>
+        <div class="rc-title-r">Anemoi Framework</div>
+        <div class="rc-desc-r">Open-source ML toolkit (Apache 2.0) for dataset creation, model training, and inference deployment. Co-developed with MeteoSwiss, KNMI and others.</div>
+        <div class="rc-url">github.com/ecmwf/anemoi-core</div>
+      </a>
+    </div>
+
+    <div class="sect-hdr">MeteoSwiss</div>
+    <div class="resource-grid">
+      <a class="resource-card rc-teal" href="https://github.com/MeteoSwiss/rainforest" target="_blank">
+        <div class="rc-org">MeteoSwiss</div>
+        <div class="rc-title-r">RainForest — Open-Source QPE</div>
+        <div class="rc-desc-r">Operational random forest quantitative precipitation estimation. Open-source Python on GitHub. Adaptable to local data even without dense radar.</div>
+        <div class="rc-url">github.com/MeteoSwiss/rainforest</div>
+      </a>
+      <a class="resource-card rc-teal" href="https://opendatadocs.meteoswiss.ch" target="_blank">
+        <div class="rc-org">MeteoSwiss</div>
+        <div class="rc-title-r">Open Data &amp; International Cooperation</div>
+        <div class="rc-desc-r">OGD documentation and bilateral collaboration enquiries. MeteoSwiss co-leads the EUMETNET E-AI programme and actively seeks tool-transfer partnerships.</div>
+        <div class="rc-url">opendatadocs.meteoswiss.ch</div>
+      </a>
+    </div>
+
+    <div class="sect-hdr">University of Oxford</div>
+    <div class="resource-grid">
+      <a class="resource-card" href="https://www.physics.ox.ac.uk/research/group/predictability-weather-and-climate" target="_blank">
+        <div class="rc-org">University of Oxford</div>
+        <div class="rc-title-r">Predictability of Weather &amp; Climate Group</div>
+        <div class="rc-desc-r">AI weather models applied in East Africa with ECMWF and WFP. Actively seeks applied collaborations with data-constrained NMHSs. Direct email — no formal portal.</div>
+        <div class="rc-url">physics.ox.ac.uk</div>
+      </a>
+      <a class="resource-card" href="https://www.eci.ox.ac.uk" target="_blank">
+        <div class="rc-org">University of Oxford</div>
+        <div class="rc-title-r">Environmental Change Institute</div>
+        <div class="rc-desc-r">Applied climate research partnerships and climate services design. Seasonal outlook and agrometeorological collaborations. Send a one-page concept note directly.</div>
+        <div class="rc-url">eci.ox.ac.uk</div>
+      </a>
+    </div>
+
+    <div class="sect-hdr">EUMETNET, EUMETSAT &amp; WMO</div>
+    <div class="resource-grid">
+      <a class="resource-card rc-mint" href="https://www.eumetnet.eu/forecasting-and-climate/artificial-intelligence" target="_blank">
+        <div class="rc-org">EUMETNET</div>
+        <div class="rc-title-r">E-AI Programme</div>
+        <div class="rc-desc-r">The unifying framework for AI in European NMHSs. Write to info@eumetnet.eu requesting E-AI observer or participant status, referencing WMO membership.</div>
+        <div class="rc-url">eumetnet.eu/AI</div>
+      </a>
+      <a class="resource-card rc-mint" href="https://www.eumetsat.int" target="_blank">
+        <div class="rc-org">EUMETSAT</div>
+        <div class="rc-title-r">E-AI Bursaries</div>
+        <div class="rc-desc-r">Annual bursary call (deadline ~February). Non-member NMHSs must partner with a EUMETSAT member-state lead institution as co-applicant.</div>
+        <div class="rc-url">eumetsat.int</div>
+      </a>
+      <a class="resource-card rc-gold" href="https://wmo.int" target="_blank">
+        <div class="rc-org">WMO</div>
+        <div class="rc-title-r">WIPPS Pilot Projects &amp; JAG-AI</div>
+        <div class="rc-desc-r">WMO pilot project fund for AI in NMHSs targeting low- and middle-income countries. Joint Advisory Group on AI (JAG-AI) guidance documents for NMHSs.</div>
+        <div class="rc-url">wmo.int</div>
+      </a>
+      <a class="resource-card rc-gold" href="https://huggingface.co/ecmwf/aifs-single-1.0" target="_blank">
+        <div class="rc-org">ECMWF / Hugging Face</div>
+        <div class="rc-title-r">AIFS Model Weights</div>
+        <div class="rc-desc-r">AIFS Single v1.0 model weights on Hugging Face. Run inference locally on your own hardware. Also PeakWeather dataset from MeteoSwiss for training nowcasting models.</div>
+        <div class="rc-url">huggingface.co/ecmwf</div>
+      </a>
+    </div>
+
+    <div class="callout callout-ai" style="margin-top:4px">
+      <strong>All details are current as of March 2026.</strong> Verify directly with each institution before acting — programme deadlines, contacts and access conditions change. The AI landscape in operational meteorology is evolving rapidly.
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-ai" onclick="showPage('summary')">View Your Results →</button>
+      <button class="btn btn-outline" onclick="exportData()">Export Assessment</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- Open-source footer -->
+<style>
+.bow-footer{position:fixed;bottom:0;left:268px;right:0;background:var(--navy);color:rgba(255,255,255,0.5);font-size:11px;padding:7px 24px;display:flex;align-items:center;justify-content:space-between;z-index:50;border-top:1px solid rgba(255,255,255,0.07)}
+.bow-footer-brand{display:flex;align-items:center;gap:8px;color:var(--white);font-weight:700;font-size:12px}
+.bow-footer-badge{background:var(--purple);color:#fff;font-weight:800;font-size:10px;padding:1px 6px;border-radius:3px}
+@media print{.bow-footer{display:none}}
+</style>
+<div class="bow-footer">
+  <div class="bow-footer-brand">
+    <span class="bow-footer-badge">NMHS</span>
+    Open-source diagnostic tool &nbsp;·&nbsp; Available on GitHub &nbsp;·&nbsp; Free to use and adapt
+  </div>
+  <div>Piloted with expertise from ECMWF &nbsp;·&nbsp; University of Oxford &nbsp;·&nbsp; MeteoSwiss</div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════════
+const PILLARS = [
+  {
+    id:'p1', num:1, weight:25,
+    name:'Data Infrastructure & Governance',
+    tagline:'Availability, quality and governance of observational and historical data',
+    desc:'Data is the fuel for all AI/ML methods — gaps here are the most common reason AI pilots fail. This pillar assesses whether your NMHS has the data foundations needed to train, validate and deploy AI applications.',
+    items:[
+      {id:'1.1', text:'The NMHS maintains a continuous, digitised archive of historical meteorological data (temperature, precipitation, wind, pressure, humidity) covering at least 20–30 years.'},
+      {id:'1.2', text:'The NMHS maintains a continuous, digitised archive of historical hydrological data (river levels, discharge, soil moisture) covering at least 20 years.'},
+      {id:'1.3', text:'Data from automatic weather stations (AWS) and hydrological gauges is transmitted and stored in near real-time with minimal gaps (<5% missing in a given month).'},
+      {id:'1.4', text:'A formal data quality control (QC) process is in place and applied consistently to both incoming real-time and archived historical data.'},
+      {id:'1.5', text:'A Climate Data Management System (CDMS) or equivalent platform is operational and used for data storage, retrieval, and product generation.'},
+      {id:'1.6', text:'Metadata standards are applied to datasets (e.g., WMO WIGOS standards), enabling interoperability with regional and global systems.'},
+      {id:'1.7', text:'The NMHS has access to satellite-derived data products (e.g., from EUMETSAT\'s Meteosat) and these are integrated into operational workflows.'},
+      {id:'1.8', text:'A formal data governance policy exists, covering data ownership, access rights, sharing protocols, and privacy obligations.'},
+      {id:'1.9', text:'Data sharing agreements are in place with key national partners (Ministry of Agriculture, Emergency Management, water authorities, etc.).'},
+      {id:'1.10', text:'The NMHS participates in regional and international data exchange mechanisms (e.g., WMO Global Telecommunication System, EUMETNET OPERA for radar).'},
+      {id:'1.11', text:'The NMHS has access to hindcast datasets (historical model re-runs or reanalysis products such as ERA5) covering a sufficient period and domain to enable retrospective evaluation, benchmarking and verification of AI-generated forecasts against baseline NWP performance.'},
+      {id:'1.12', text:'The NMHS is confident in its ability to centralise and align observational data from multiple sources (AWS networks, radar, satellite, hydrological gauges) into a consistent, well-documented format suitable for AI/ML training workflows — including handling of data gaps, format conversions, and temporal alignment. Existing Climate Data Management Systems have been or are being modernised to support this requirement.'}
+    ]
+  },
+  {
+    id:'p2', num:2, weight:15,
+    name:'Technical & Computing Infrastructure',
+    tagline:'Hardware, software and connectivity needed to run AI tools and models',
+    desc:'Many gaps in this pillar can be addressed with modest investment in cloud access. This pillar rarely needs to be fully resolved before starting AI pilots — a score of 2 across key items is usually sufficient to begin.',
+    items:[
+      {id:'2.1', text:'The NMHS has dedicated servers or computing infrastructure capable of running numerical weather prediction (NWP) or post-processing models.'},
+      {id:'2.2', text:'The NMHS has access to cloud computing resources (government cloud, commercial cloud, or a regional shared infrastructure such as the ECMWF European Weather Cloud).'},
+      {id:'2.3', text:'Staff workstations are modern enough to run data science tools (Python, R, Jupyter notebooks, xarray, etc.) without significant performance issues.'},
+      {id:'2.4', text:'The NMHS has reliable, high-speed internet connectivity at its main operational centre (sufficient for downloading ECMWF open data products in real time).'},
+      {id:'2.5', text:'The NMHS uses open-source or licensed software platforms for data analysis and visualisation (e.g., QGIS, Metview, Python scientific stack).'},
+      {id:'2.6', text:'A data backup and disaster recovery system is in place for critical operational data and systems.'},
+      {id:'2.7', text:'The NMHS has access to Doppler weather radar data in a format suitable for digital processing and potential ML-based analysis (e.g., BUFR, HDF5, or NetCDF).'},
+      {id:'2.8', text:'IT infrastructure is maintained by dedicated IT staff or through a formal support arrangement with a reliable provider.'},
+      {id:'2.9', text:'The NMHS has or can access GPU-enabled computing resources for training machine learning models (on-premises or via cloud).'},
+      {id:'2.10', text:'Cybersecurity measures are in place to protect operational systems and data (firewalls, access controls, software update policies, incident response plan).'}
+    ]
+  },
+  {
+    id:'p3', num:3, weight:25,
+    name:'Human Capacity & Skills',
+    tagline:'Existing expertise and pathways for building AI-relevant skills',
+    desc:'Human capacity is the hardest bottleneck to address and the most important. No AI tool deploys itself — someone must understand it, adapt it, and maintain it. Checklist items 3.1, 3.2, 3.4 and 3.7 together define whether this capacity exists or is being built.',
+    items:[
+      {id:'3.1', text:'At least one staff member has working knowledge of a programming language used in data science (Python, R, or equivalent) and uses it regularly for data analysis.'},
+      {id:'3.2', text:'At least one staff member has experience with machine learning concepts or has completed relevant training (e.g., ECMWF ML course, online ML certification).'},
+      {id:'3.3', text:'Operational forecasters have basic digital literacy and are comfortable using software-based forecasting tools (decision support systems, visualisation platforms).'},
+      {id:'3.4', text:'The NMHS has a documented training plan or learning pathway for staff to develop data science and AI skills over the next 1–2 years.'},
+      {id:'3.5', text:'Staff have participated in WMO, EUMETNET, ECMWF, or equivalent training programmes on numerical modelling or data-driven methods within the past three years.'},
+      {id:'3.6', text:'NMHS leadership (Director, heads of department) understands the potential and realistic limitations of AI for hydrometeorological services.'},
+      {id:'3.7', text:'The NMHS has a strategy or plan to attract and retain technically skilled staff (data scientists, IT specialists), including appropriate salary structures or incentives.'},
+      {id:'3.8', text:'Staff turnover in technical roles is low enough to sustain institutional knowledge and continuity of AI initiatives (key roles stable over multi-year horizon).'},
+      {id:'3.9', text:'The NMHS collaborates with local universities or research institutions to access data science expertise and to provide opportunities for student placements.'},
+      {id:'3.10', text:'Staff are aware of at least one concrete AI application directly relevant to their work (e.g., ML-based bias correction of NWP output, precipitation nowcasting).'}
+    ]
+  },
+  {
+    id:'p4', num:4, weight:15,
+    name:'Operational Workflow Integration',
+    tagline:'Readiness to absorb and use AI-generated outputs in operations',
+    desc:'AI tools that cannot plug into operational workflows have no impact. This pillar assesses whether your current systems and processes are positioned to receive and use AI outputs. A structured forecasting workflow is the foundation.',
+    items:[
+      {id:'4.1', text:'The NMHS uses a structured, documented forecasting workflow with defined steps from data ingestion to product dissemination, enabling systematic quality assurance.'},
+      {id:'4.2', text:'Standard Operating Procedures (SOPs) exist for key operational tasks (severe weather warning issuance, flood forecasting, seasonal outlooks, aviation products).'},
+      {id:'4.3', text:'The NMHS uses probabilistic or ensemble-based forecasting methods in its operational workflow (either from global models or through own post-processing).'},
+      {id:'4.4', text:'The NMHS has implemented impact-based forecasting (IBF) or is actively working towards it in line with WMO guidelines.'},
+      {id:'4.5', text:'A nowcasting system is operational and integrated into the daily forecasting workflow (even if using simple extrapolation methods).'},
+      {id:'4.6', text:'The NMHS has a hydrological forecasting capability for key river catchments that could be enhanced with ML-based methods for discharge or level prediction.'},
+      {id:'4.7', text:'The NMHS has a mechanism to verify and validate forecast performance against observations (skill scores, verification reports shared internally and/or externally).'},
+      {id:'4.8', text:'The NMHS has experience integrating outputs from external NWP models (e.g., ECMWF IFS, regional NWP partners) into its own products — a capability directly transferable to AI outputs.'},
+      {id:'4.9', text:'Forecasters are open to using AI-generated guidance as decision-support (rather than viewing AI as a threat to professional judgment or job security).'},
+      {id:'4.10', text:'The NMHS has a product dissemination system (website, mobile app, API, or similar) capable of delivering AI-enhanced products to end users in near real-time.'}
+    ]
+  },
+  {
+    id:'p5', num:5, weight:10,
+    name:'Governance, Ethics & Institutional Frameworks',
+    tagline:'Leadership endorsement and accountability frameworks for AI adoption',
+    desc:'Without leadership endorsement and clear accountability frameworks, AI pilots rarely transition to operational products. This pillar rarely blocks early pilots but matters significantly for sustained progress beyond Phase 1.',
+    items:[
+      {id:'5.1', text:'AI or digital innovation is explicitly mentioned in the NMHS\'s strategic plan or modernisation roadmap (as a goal, workstream, or priority area).'},
+      {id:'5.2', text:'NMHS leadership has formally endorsed or expressed support for exploring AI applications and has communicated this to staff.'},
+      {id:'5.3', text:'The NMHS has or is developing internal guidelines on the responsible use of AI (human oversight requirements, QA protocols for AI outputs, forecaster accountability).'},
+      {id:'5.4', text:'The NMHS is aware of and has engaged with the national digital transformation strategy and any relevant AI or technology policy frameworks as potential funding and policy levers.'},
+      {id:'5.5', text:'A legal and regulatory framework governs the NMHS\'s data sharing and service delivery obligations in a way that is compatible with open data principles and international sharing (updated beyond any legacy legislation).'},
+      {id:'5.6', text:'The NMHS has a budget line or access to funding specifically for technology modernisation and innovation (including potential access to EU, WMO, or bilateral grant instruments).'},
+      {id:'5.7', text:'The NMHS has a process for evaluating and adopting new tools or methods (a technical committee, innovation working group, or equivalent mechanism).'},
+      {id:'5.8', text:'Accountability for AI-generated products is clearly defined: a qualified human forecaster remains responsible for all issued warnings and public forecasts.'},
+      {id:'5.9', text:'The NMHS is aware of WMO\'s AI Action Plan, the Joint Advisory Group on AI (JAG-AI), and relevant WMO guidance documents on AI for NMHSs.'},
+      {id:'5.10', text:'The NMHS has a mechanism to communicate AI-related risks, errors, or failures to management and relevant external stakeholders in a timely and transparent way.'}
+    ]
+  },
+  {
+    id:'p6', num:6, weight:10,
+    name:'Partnerships & External Linkages',
+    tagline:'Ability to leverage external expertise, data and resources',
+    desc:'No national service needs to build AI capability in isolation. International partnerships (ECMWF, MeteoSwiss, WMO, EUMETNET) provide a practical starting point. This pillar assesses your current connectivity to those ecosystems.',
+    items:[
+      {id:'6.1', text:'The NMHS has active collaboration with at least one other NMHS or regional centre that could extend to sharing AI/ML methods and tools.'},
+      {id:'6.2', text:'The NMHS has explored or established partnerships with private sector technology providers for AI tools, cloud services, or data science support.'},
+      {id:'6.3', text:'The NMHS participates in the relevant WMO Regional Association activities where AI and digital transformation are discussed, and is represented in relevant working groups.'},
+      {id:'6.4', text:'The NMHS has accessed or is aware of pre-trained AI models and open-source tools from peer NMHSs or global centres (e.g., ECMWF\'s AIFS, MeteoSwiss\'s RainForest, Anemoi framework on GitHub).'},
+      {id:'6.5', text:'The NMHS has participated in, or is aware of, AI pilot projects in the hydrometeorological sector at the regional or global level (e.g., WMO WIPPS pilots, EUMETNET E-AI projects).'},
+      {id:'6.6', text:'The NMHS has an active relationship with national universities and research institutes that could generate internships or research collaborations in data science.'},
+      {id:'6.7', text:'NMHS leadership has directly engaged EUMETNET, EUMETSAT, or ECMWF on participation in training or collaborative programmes.'},
+      {id:'6.8', text:'The NMHS is aware of and aligned with the EUMETNET E-AI programme, its workshop schedule, and the EUMETSAT bursary mechanism for accessing its activities.'},
+      {id:'6.9', text:'The NMHS has engaged or considered engaging leading research universities or international research groups on applied climate or weather research relevant to its operational context.'},
+      {id:'6.10', text:'The NMHS has a mechanism for capturing lessons from external partnerships and embedding them into internal workflows and institutional knowledge.'}
+    ]
+  }
+];
+
+const SCORE_LABELS = ['Absent','Initial','Developing','Established'];
+const SCORE_COLORS = ['#DC2626','#F97316','#F59E0B','#059669'];
+const PREFIX = 'nmhs_ai_';
+const PILLAR_COLORS = ['#7C3AED','#065A82','#1C7293','#F59E0B','#F97316','#059669'];
+
+// ════════════════════════════════════════════════════════
+// BUILD PILLAR PAGES
+// ════════════════════════════════════════════════════════
+function buildPillarPages() {
+  PILLARS.forEach((pillar, pi) => {
+    const nextPillar = PILLARS[pi+1];
+    const page = document.getElementById('page-' + pillar.id);
+    const color = PILLAR_COLORS[pi];
+
+    page.innerHTML = `
+      <div class="page-header" style="background:linear-gradient(135deg,${color}dd,${color})">
+        <div class="ph-eyebrow">Pillar ${pillar.num} of 6 — ${pillar.weight}% weight</div>
+        <h1>${pillar.name}</h1>
+        <p>${pillar.tagline}</p>
+      </div>
+      <div class="page-body">
+        <div class="pillar-intro">
+          <div class="pillar-num" style="background:${color}">${pillar.num}</div>
+          <div class="pillar-meta">
+            <div class="pillar-name">${pillar.name}</div>
+            <div class="pillar-tagline">${pillar.desc}</div>
+            <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;align-items:center">
+              <div class="pillar-weight-badge" style="background:${color}18;color:${color}">Weight: ${pillar.weight}%</div>
+              <div style="font-size:12px;font-weight:700;color:${color}" id="ps-val-${pillar.id}">Score: 0 / 30</div>
+            </div>
+            <div class="pillar-score-row">
+              <div class="pillar-score-bar-wrap"><div class="pillar-score-bar" id="ps-bar-${pillar.id}" style="width:0%;background:${color}"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="score-legend">
+          <div class="sl-pill" style="background:#DC262618;color:#DC2626">0 — Absent</div>
+          <div class="sl-pill" style="background:#F9731618;color:#EA580C">1 — Initial</div>
+          <div class="sl-pill" style="background:#F59E0B18;color:#D97706">2 — Developing</div>
+          <div class="sl-pill" style="background:#05996918;color:#059669">3 — Established</div>
+        </div>
+
+        ${pillar.items.map((item, ii) => `
+          <div class="item-card" id="ic-${item.id}">
+            <div class="item-header">
+              <div class="item-num" style="background:${color}18;color:${color}">${item.id}</div>
+              <div class="item-text">${item.text}</div>
+            </div>
+            <div class="score-btns">
+              ${[0,1,2,3].map(s => `
+                <button class="score-btn" id="btn-${item.id}-${s}" onclick="setScore('${item.id}',${s},'${pillar.id}')">
+                  <div style="font-size:15px;font-weight:800">${s}</div>
+                  <div style="font-size:10px;font-weight:500;opacity:.8">${SCORE_LABELS[s]}</div>
+                </button>
+              `).join('')}
+            </div>
+            <div class="obs-label">Observations / Evidence</div>
+            <textarea class="obs-field" id="obs-${item.id}" placeholder="Note evidence, context, or planned actions…" oninput="saveObs('${item.id}')" rows="2"></textarea>
+          </div>
+        `).join('')}
+
+        <div class="btn-group">
+          ${nextPillar ? `<button class="btn btn-ai" onclick="showPage('${nextPillar.id}')">Next: Pillar ${nextPillar.num} →</button>` : `<button class="btn btn-ai" onclick="showPage('summary')">View Summary &amp; Results →</button>`}
+          <button class="btn btn-outline" onclick="exportData()">Export</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// SCORING
+// ════════════════════════════════════════════════════════
+function setScore(itemId, score, pillarId) {
+  [0,1,2,3].forEach(s => {
+    const btn = document.getElementById(`btn-${itemId}-${s}`);
+    if (!btn) return;
+    btn.className = 'score-btn' + (s === score ? ` active-${s}` : '');
+  });
+  const card = document.getElementById('ic-'+itemId);
+  if (card) card.classList.add('scored');
+  localStorage.setItem(PREFIX + 'score_' + itemId, score);
+  updatePillarScore(pillarId);
+  updateSidebar();
+  updateProgress();
+}
+
+function getScore(itemId) {
+  const v = localStorage.getItem(PREFIX + 'score_' + itemId);
+  return v !== null ? parseInt(v) : null;
+}
+
+function saveObs(itemId) {
+  const el = document.getElementById('obs-'+itemId);
+  if (el) localStorage.setItem(PREFIX + 'obs_' + itemId, el.value);
+}
+
+function getPillarTotal(pillar) {
+  return pillar.items.reduce((sum, item) => {
+    const s = getScore(item.id);
+    return sum + (s !== null ? s : 0);
+  }, 0);
+}
+
+function getPillarScored(pillar) {
+  return pillar.items.filter(item => getScore(item.id) !== null).length;
+}
+
+function updatePillarScore(pillarId) {
+  const pillar = PILLARS.find(p => p.id === pillarId);
+  if (!pillar) return;
+  const total = getPillarTotal(pillar);
+  const max = pillar.items.length * 3;
+  const pct = (total / max) * 100;
+  const valEl = document.getElementById('ps-val-'+pillarId);
+  const barEl = document.getElementById('ps-bar-'+pillarId);
+  if (valEl) valEl.textContent = `Score: ${total} / ${max}`;
+  if (barEl) barEl.style.width = pct + '%';
+}
+
+// ════════════════════════════════════════════════════════
+// WEIGHTED SCORE & TIER
+// ════════════════════════════════════════════════════════
+function calcWeightedScore() {
+  return PILLARS.reduce((sum, p) => {
+    const total = getPillarTotal(p);
+    return sum + (total / (p.items.length * 3)) * p.weight;
+  }, 0);
+}
+
+function getTier(score) {
+  if (score <= 33) return {num:1, label:'Tier 1 — Foundational', color:'#DC2626', bg:'rgba(220,38,38,0.1)'};
+  if (score <= 66) return {num:2, label:'Tier 2 — Developing', color:'#F59E0B', bg:'rgba(245,158,11,0.1)'};
+  return {num:3, label:'Tier 3 — Advanced', color:'#059669', bg:'rgba(5,150,105,0.1)'};
+}
+
+// ════════════════════════════════════════════════════════
+// SIDEBAR UPDATE
+// ════════════════════════════════════════════════════════
+function updateSidebar() {
+  PILLARS.forEach(p => {
+    const total = getPillarTotal(p);
+    const scored = getPillarScored(p);
+    const ns = document.getElementById('ns-'+p.id);
+    if (ns) ns.textContent = scored > 0 ? total : '–';
+    const dot = document.getElementById('dot-'+p.id);
+    if (dot) {
+      const pct = scored / p.items.length;
+      dot.style.background = pct === 0 ? 'rgba(255,255,255,0.18)' : pct < 1 ? '#F59E0B' : '#02C39A';
+    }
+  });
+  const weighted = calcWeightedScore();
+  const tier = getTier(weighted);
+  const totalEl = document.getElementById('sb-total');
+  const tierEl = document.getElementById('sb-tier');
+  if (totalEl) totalEl.textContent = weighted.toFixed(1);
+  if (tierEl) {
+    tierEl.textContent = tier.label;
+    tierEl.style.background = tier.bg;
+    tierEl.style.color = tier.color;
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// PROGRESS
+// ════════════════════════════════════════════════════════
+function updateProgress() {
+  const total = PILLARS.reduce((s,p) => s + p.items.length, 0);
+  const done = PILLARS.reduce((s,p) => s + getPillarScored(p), 0);
+  const pct = Math.round((done/total)*100);
+  const fill = document.getElementById('prog-fill');
+  const pctEl = document.getElementById('prog-pct');
+  if (fill) fill.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+// ════════════════════════════════════════════════════════
+// SUMMARY
+// ════════════════════════════════════════════════════════
+function buildSummary() {
+  const weighted = calcWeightedScore();
+  const tier = getTier(weighted);
+  const totalScored = PILLARS.reduce((s,p) => s + getPillarScored(p), 0);
+  const container = document.getElementById('summaryContent');
+
+  if (totalScored === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--gray)">
+      <div style="font-size:40px;margin-bottom:12px">📊</div>
+      <div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:6px">No scores recorded yet</div>
+      <div style="font-size:13px">Complete the pillar assessments to see your summary.</div>
+      <button class="btn btn-ai" onclick="showPage('p1')" style="margin-top:16px">Start Assessment →</button>
+    </div>`;
+    return;
+  }
+
+  const routingText = {
+    1: 'Your immediate priorities are data digitisation, basic Python/ML skills, and engagement with WMO capacity-building programmes. Focus on Pillars 1 (Data) and 3 (Skills) first — do not attempt operational AI pilots until these each reach ≥40% of their weighted score. Contact ECMWF and WMO for training resources and technical assistance.',
+    2: 'You are ready for targeted AI pilots in 1–2 application areas. Prioritise strengthening your two lowest-scoring pillars, as these represent the most likely blockers as you move towards operational deployment. Engage with ECMWF Open Data, EUMETNET E-AI, and regional partners.',
+    3: 'You are ready to systematically integrate AI into operational workflows. Pursue advanced collaboration with ECMWF, MeteoSwiss, and regional NWP centres. Consider whether your NMHS can serve as a regional AI reference centre under WMO\'s framework.'
+  };
+
+  const weakest = [...PILLARS].sort((a,b) => {
+    const pa = getPillarTotal(a)/(a.items.length*3), pb = getPillarTotal(b)/(b.items.length*3);
+    return pa - pb;
+  }).slice(0,2);
+
+  container.innerHTML = `
+    <div class="overall-card">
+      <div class="oc-score">${weighted.toFixed(1)}<span class="oc-denom">/100</span></div>
+      <div class="oc-tier">${tier.label}</div>
+      <div class="oc-label">Weighted score across all six pillars</div>
+    </div>
+
+    <div class="tier-strip">
+      <div class="ts-item ${tier.num===1?'active':''}" style="${tier.num===1?'background:rgba(220,38,38,0.05);border-color:#DC2626':''}">
+        <div class="ts-range" style="${tier.num===1?'color:#DC2626':''}">0–33</div>
+        <div class="ts-name">Tier 1</div>
+        <div class="ts-desc">Foundational</div>
+      </div>
+      <div class="ts-item ${tier.num===2?'active':''}" style="${tier.num===2?'background:rgba(245,158,11,0.05);border-color:#F59E0B':''}">
+        <div class="ts-range" style="${tier.num===2?'color:#F59E0B':''}">34–66</div>
+        <div class="ts-name">Tier 2</div>
+        <div class="ts-desc">Developing</div>
+      </div>
+      <div class="ts-item ${tier.num===3?'active':''}" style="${tier.num===3?'background:rgba(5,150,105,0.05);border-color:#059669':''}">
+        <div class="ts-range" style="${tier.num===3?'color:#059669':''}">67–100</div>
+        <div class="ts-name">Tier 3</div>
+        <div class="ts-desc">Advanced</div>
+      </div>
+    </div>
+
+    <div class="radar-wrap">
+      <div class="radar-canvas-wrap">
+        <canvas id="aiRadar" width="260" height="260"></canvas>
+      </div>
+      <div class="radar-legend">
+        ${PILLARS.map((p,i) => {
+          const total = getPillarTotal(p);
+          const pct = (total/(p.items.length*3))*100;
+          return `<div class="rl-item">
+            <div class="rl-dot" style="background:${PILLAR_COLORS[i]}"></div>
+            <div class="rl-name">P${p.num}. ${p.name.split(' &')[0].split(',')[0]}</div>
+            <div class="rl-bar-wrap"><div class="rl-bar" style="width:${pct}%;background:${PILLAR_COLORS[i]}"></div></div>
+            <div class="rl-val" style="color:${PILLAR_COLORS[i]}">${total}</div>
+            <div class="rl-pct">${pct.toFixed(0)}%</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="sect-hdr">Weighted Scorecard</div>
+    <div class="summary-grid" style="margin-bottom:20px">
+      ${PILLARS.map((p,i) => {
+        const total = getPillarTotal(p);
+        const weighted_p = ((total/(p.items.length*3))*p.weight).toFixed(1);
+        const pct = (total/(p.items.length*3))*100;
+        return `<div class="summary-pillar-card">
+          <div class="spc-header">
+            <div class="spc-num" style="background:${PILLAR_COLORS[i]}">${p.num}</div>
+            <div class="spc-name">${p.name}</div>
+            <div class="spc-weight">${p.weight}%</div>
+          </div>
+          <div class="spc-score-row">
+            <div class="spc-score" style="color:${PILLAR_COLORS[i]}">${total}</div>
+            <div class="spc-denom">/${p.items.length*3}</div>
+            <div class="spc-bar-wrap"><div class="spc-bar" style="width:${pct}%;background:${PILLAR_COLORS[i]}"></div></div>
+          </div>
+          <div class="spc-weighted">Weighted contribution: ${weighted_p} / ${p.weight} points</div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="sect-hdr">Maturity Tier — Recommended Next Steps</div>
+    <div class="sect-sub">Based on your maturity tier, here is how to prioritise your AI development roadmap.</div>
+    <div class="route-card tier${tier.num} highlighted">
+      <div class="rc-tier" style="color:${tier.color}">${tier.label} — Your Tier</div>
+      <div class="rc-title">Recommended approach</div>
+      <div class="rc-body">${routingText[tier.num]}</div>
+    </div>
+
+    ${weakest.some(p => getPillarTotal(p)/(p.items.length*3) < 0.5) ? `
+    <div class="sect-hdr" style="margin-top:20px">Priority Development Areas</div>
+    <div class="sect-sub">Your two lowest-scoring pillars — focus here before scaling AI pilots.</div>
+    ${weakest.map((p,i) => {
+      const total = getPillarTotal(p);
+      return `<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--white);border:1px solid var(--border);border-radius:10px;margin-bottom:8px">
+        <div style="width:32px;height:32px;border-radius:8px;background:${PILLAR_COLORS[PILLARS.indexOf(p)]};color:var(--white);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.num}</div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--navy)">${p.name}</div><div style="font-size:12px;color:var(--gray)">${total}/${p.items.length*3} (${((total/(p.items.length*3))*100).toFixed(0)}%) — ${p.tagline}</div></div>
+      </div>`;
+    }).join('')}` : ''}
+
+    <div class="btn-group" style="margin-top:20px">
+      <button class="btn btn-ai" onclick="showPage('pilots')">View AI Pilots →</button>
+      <button class="btn btn-outline" onclick="exportData()">Export Assessment</button>
+      <button class="btn btn-outline" onclick="window.print()">Print</button>
+    </div>
+  `;
+
+  setTimeout(() => drawRadar(), 50);
+}
+
+function drawRadar() {
+  const canvas = document.getElementById('aiRadar');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 260, H = 260, cx = W/2, cy = H/2, R = 95, N = 6;
+  const scores = PILLARS.map(p => getPillarTotal(p) / 30);
+  const labels = ['P1','P2','P3','P4','P5','P6'];
+  ctx.clearRect(0,0,W,H);
+  for (let ring=1; ring<=3; ring++) {
+    ctx.beginPath();
+    for (let i=0; i<N; i++) {
+      const angle = (Math.PI*2*i/N) - Math.PI/2;
+      const r = (ring/3)*R;
+      const x = cx + r*Math.cos(angle), y = cy + r*Math.sin(angle);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(0,0,0,0.07)'; ctx.lineWidth=1; ctx.stroke();
+  }
+  for (let i=0; i<N; i++) {
+    const angle = (Math.PI*2*i/N) - Math.PI/2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+R*Math.cos(angle), cy+R*Math.sin(angle));
+    ctx.strokeStyle='rgba(0,0,0,0.08)'; ctx.lineWidth=1; ctx.stroke();
+  }
+  ctx.beginPath();
+  for (let i=0; i<N; i++) {
+    const angle = (Math.PI*2*i/N) - Math.PI/2;
+    const r = scores[i]*R;
+    const x = cx+r*Math.cos(angle), y = cy+r*Math.sin(angle);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle='rgba(124,58,237,0.18)'; ctx.fill();
+  ctx.strokeStyle='#7C3AED'; ctx.lineWidth=2; ctx.stroke();
+  for (let i=0; i<N; i++) {
+    const angle = (Math.PI*2*i/N) - Math.PI/2;
+    const r = scores[i]*R;
+    const x = cx+r*Math.cos(angle), y = cy+r*Math.sin(angle);
+    ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2);
+    ctx.fillStyle=PILLAR_COLORS[i]; ctx.fill();
+  }
+  for (let i=0; i<N; i++) {
+    const angle = (Math.PI*2*i/N) - Math.PI/2;
+    const lr = R+16;
+    const x = cx+lr*Math.cos(angle), y = cy+lr*Math.sin(angle);
+    ctx.fillStyle='#0A2239'; ctx.font='bold 11px Inter,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(labels[i], x, y);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// EXPORT
+// ════════════════════════════════════════════════════════
+function exportData() {
+  const date = new Date().toISOString().split('T')[0];
+  const weighted = calcWeightedScore();
+  const tier = getTier(weighted);
+  let out = `NMHS AI Readiness Assessment — Part A\nGenerated: ${date}\nTool: NMHS Advisory Toolkit (ECMWF · University of Oxford · MeteoSwiss)\n\n`;
+  out += `OVERALL WEIGHTED SCORE: ${weighted.toFixed(1)} / 100\nMATURITY TIER: ${tier.label}\n\n${'='.repeat(60)}\nPILLAR SCORECARD\n${'='.repeat(60)}\n\n`;
+  PILLARS.forEach(p => {
+    const total = getPillarTotal(p);
+    const wp = ((total/(p.items.length*3))*p.weight).toFixed(1);
+    out += `Pillar ${p.num}: ${p.name} (Weight: ${p.weight}%)\nScore: ${total}/${p.items.length*3} | Weighted: ${wp}/${p.weight}\n\n`;
+    p.items.forEach(item => {
+      const s = getScore(item.id);
+      const obs = localStorage.getItem(PREFIX + 'obs_' + item.id) || '';
+      out += `  ${item.id}. [${s !== null ? s + ' — ' + SCORE_LABELS[s] : 'Not scored'}]\n`;
+      out += `       ${item.text.substring(0,100)}${item.text.length>100?'…':''}\n`;
+      if (obs) out += `       Notes: ${obs}\n`;
+      out += '\n';
+    });
+  });
+  out += `${'='.repeat(60)}\nRECOMMENDED NEXT STEPS\n${'='.repeat(60)}\n`;
+  out += `1. Register for ECMWF Open Data: ecmwf.int/en/forecasts/dataset/aifs-machine-learning-data\n`;
+  out += `2. Contact EUMETNET for E-AI observer status: info@eumetnet.eu\n`;
+  out += `3. Enrol staff in ECMWF DestinE online ML courses: learning.ecmwf.int\n`;
+  out += `4. Use your maturity tier to prioritise pillar development and guide your AI roadmap.\n`;
+  const blob = new Blob([out], {type:'text/plain'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`NMHS_AI_Readiness_${date}.txt`; a.click();
+}
+
+// ════════════════════════════════════════════════════════
+// PAGE NAVIGATION
+// ════════════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-'+id);
+  if (page) page.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
+  });
+  if (id === 'summary') buildSummary();
+  const dot = document.getElementById('dot-'+id);
+  if (dot) { localStorage.setItem(PREFIX+'visited_'+id,'1'); }
+  window.scrollTo(0,0);
+}
+
+// ════════════════════════════════════════════════════════
+// LOAD SAVED DATA
+// ════════════════════════════════════════════════════════
+function loadAll() {
+  PILLARS.forEach(p => {
+    p.items.forEach(item => {
+      const s = getScore(item.id);
+      if (s !== null) {
+        const btn = document.getElementById(`btn-${item.id}-${s}`);
+        if (btn) btn.className = `score-btn active-${s}`;
+        const card = document.getElementById('ic-'+item.id);
+        if (card) card.classList.add('scored');
+      }
+      const obs = localStorage.getItem(PREFIX + 'obs_' + item.id);
+      if (obs) { const el = document.getElementById('obs-'+item.id); if(el) el.value = obs; }
+    });
+    updatePillarScore(p.id);
+  });
+  updateSidebar();
+  updateProgress();
+}
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+buildPillarPages();
+loadAll();
+</script>
+</body>
+</html>
